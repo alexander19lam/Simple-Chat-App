@@ -1,0 +1,56 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+<script>
+    let socket = io();
+    let userExist = document.cookie.split(';').find(cookie => cookie.includes('user='));
+    let user = userExist && userExist.split('=')[1].trim();
+
+    function sendMSG(){
+        let msg = document.querySelector('#data').value;
+        socket.emit('message',`${user}: ${msg}`);
+    }
+
+    socket.on('history', history => {
+        JSON.parse(history).forEach(message => {
+            document.querySelector('#messages').innerHTML += message;
+        });
+    });
+
+    socket.on('userList', userlist => {
+        document.querySelector('#users').innerHTML = '';
+        JSON.parse(userlist).forEach(user => {
+            document.querySelector('#users').innerHTML += user;
+        });
+    });
+
+    socket.on('setUser', name => {
+        document.cookie = `user=${name}`;
+        user = name;
+    })
+    socket.on('message', msg => {
+        document.querySelector('#messages').innerHTML += msg;
+    });
+</script>
+</head>
+<body>
+    <div id="container">
+        <div id='content'>
+            <div id="messages">
+
+            </div>
+            <div id="users">
+
+            </div>
+        </div>
+        <div id="controls">
+            <input type="text" id="data">
+            <button onclick="sendMSG()">Submit</button>
+        </div>
+    </div>
+</body>
+</html>
