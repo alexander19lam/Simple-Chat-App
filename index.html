@@ -19,15 +19,18 @@
             return time > 9 ? time : `0${time}`;
         }
         const time = new Date(date);
-        return `<p>[${correctTime(time.getHours())}:${correctTime(time.getMinutes())}] ${user}: ${message}</p>`
+        const styledUser = `<span style='color:${user.color}'>${user.username}</span>`
+        return `<p>[${correctTime(time.getHours())}:${correctTime(time.getMinutes())}] ${styledUser}: ${message}</p>`
     }
 
     window.onload = () => {
         document.querySelector('#controls').addEventListener('submit', event => {
             event.preventDefault();
             const field = document.querySelector('#data');
-            
-            if (field.value.startsWith('/nick')){
+            if (field.value.startsWith('/nickcolor')){
+                socket.emit('color', field.value.split(' ')[1]);
+            }
+            else if (field.value.startsWith('/nick')){
                 socket.emit('nickname', field.value.split(' ')[1]);
             } 
             else {
@@ -38,9 +41,9 @@
         });
     };
 
-    socket.on('setUser', name => {
-        document.cookie = `user=${name}`;
-        currentUser = name;
+    socket.on('setUser', user => {
+        document.cookie = `user=${user.username}`;
+        currentUser = user;
     })
 
     socket.on('history', history => {
@@ -52,8 +55,8 @@
 
     socket.on('userList', userlist => {
         document.querySelector('#users').innerHTML = '';
-        JSON.parse(userlist).forEach(user => {
-            document.querySelector('#users').innerHTML += `<p>${user}</p>`;
+        JSON.parse(userlist).forEach(({username, color}) => {
+            document.querySelector('#users').innerHTML += `<p style='color:${color}'>${username}</p>`;
         });
     });
     
