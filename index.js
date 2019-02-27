@@ -30,37 +30,62 @@ io.on('connection', (socket) => {
 
     // Checking if user exist and assigning name
     const cookie = socket.client.request.headers.cookie;
-    const userExist =  cookie && cookie.split(';').find(cookie => cookie.includes('user='));
+    const userCookie =  cookie && cookie.split(';').find(cookie => cookie.includes('user='));
+    let user = userCookie && userCookie.split('=')[1];
     
-    if (!userExist){
-        const newUser = availUsers[Math.floor(Math.random()*availUsers.length)];
-        usedUsers.push(newUser);
-        availUsers.splice(availUsers.indexOf(newUser),1);
-        socket.emit('setUser',newUser);
-        activeUsers.push(`<p>${newUser}</p>`);
+    // If there are users, Add it to the list
+    if (user){
+        // Only add to active user if he is not there
+        !activeUsers.includes(user) && activeUsers.push(user);
+        socket.emit('setUser', user);
     }
     else{
-        const newUser = `<p>${userExist.split('=')[1].trim()}</p>`;
-        !activeUsers.includes(newUser) && activeUsers.push(newUser);
+        // Generating new name for the user
+        user = availUsers[Math.floor(Math.random()*availUsers.length)];
+        usedUsers.push(user);
+        // Removing it from list of possible users
+        availUsers.splice(availUsers.indexOf(user),1);
+        activeUsers.push(user);
+        socket.emit('setUser',user);
     }
+
+    // Letting people know who connected
+    socket.broadcast.emit('status', `${user} has joined the chat`);
+
+    // Updating userlist
     io.emit('userList', JSON.stringify(activeUsers));
 
     // Sending the Chat History
     socket.emit('history', JSON.stringify(messageLog));
 
+
     // Sending Messages
     socket.on('message', msg => {
-        let message = `<p>${getTime()} ${msg}</p>`;
+        const message = {date : new Date(), ...JSON.parse(msg)};
         messageLog.push(message);
-        io.emit('message', message);
+        io.emit('message', JSON.stringify(message));
     });
 
+    socket.on('nickname', name => {
+        if(activeUsers.find(user => user === name)){
+            socket.emit('status', 'Name in use. Your name was not changed.')
+        }else{
+            activeUsers[activeUsers.indexOf(user)] = name;
+            socket.emit('setUser', name);
+            socket.emit('status', `Your name has been changed to ${name}`);
+            socket.broadcast.emit('status', `${user} has changed his name to ${name}`);
+            io.emit('userList', JSON.stringify(activeUsers));
+            user = name;
+        }        
+    });
+
+    // On Disconnect
     socket.on('disconnect', () => {
-        console.log('disconnected');
+        socket.broadcast.emit('status', `${user} has left the chat`)
+        activeUsers.splice(activeUsers.indexOf(user),1);
+        io.emit('userList', JSON.stringify(activeUsers));
     });
 });
-
-
 
 http.listen(3000, () => {
     console.log('Listening on Port 3000');

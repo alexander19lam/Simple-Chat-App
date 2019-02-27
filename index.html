@@ -6,36 +6,114 @@
     <title>Document</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
 <script>
-    let socket = io();
-    let userExist = document.cookie.split(';').find(cookie => cookie.includes('user='));
-    let user = userExist && userExist.split('=')[1].trim();
-
-    function sendMSG(){
-        let msg = document.querySelector('#data').value;
-        socket.emit('message',`${user}: ${msg}`);
+    let currentUser, socket = io();
+    
+    function updateScroll() {
+        const element = document.querySelector('#messages');
+        element.scrollTop = element.scrollHeight;
     }
+
+    function formatMessage({date, user, message}){
+        // Function to compensate for missing 0 in minutes and hour
+        function correctTime(time){
+            return time > 9 ? time : `0${time}`;
+        }
+        const time = new Date(date);
+        return `<p>[${correctTime(time.getHours())}:${correctTime(time.getMinutes())}] ${user}: ${message}</p>`
+    }
+
+    window.onload = () => {
+        document.querySelector('#controls').addEventListener('submit', event => {
+            event.preventDefault();
+            const field = document.querySelector('#data');
+            
+            if (field.value.startsWith('/nick')){
+                socket.emit('nickname', field.value.split(' ')[1]);
+            } 
+            else {
+                field.value && socket.emit('message',JSON.stringify({user: currentUser, message: field.value}));
+            }
+            field.value = '';
+
+        });
+    };
+
+    socket.on('setUser', name => {
+        document.cookie = `user=${name}`;
+        currentUser = name;
+    })
 
     socket.on('history', history => {
         JSON.parse(history).forEach(message => {
-            document.querySelector('#messages').innerHTML += message;
+            document.querySelector('#messages').innerHTML += formatMessage(message);
         });
+        updateScroll();
     });
 
     socket.on('userList', userlist => {
         document.querySelector('#users').innerHTML = '';
         JSON.parse(userlist).forEach(user => {
-            document.querySelector('#users').innerHTML += user;
+            document.querySelector('#users').innerHTML += `<p>${user}</p>`;
         });
     });
+    
+    socket.on('status', msg => {
+        document.querySelector('#messages').innerHTML += `<p><i>${msg}</i></p>`;
+    });
 
-    socket.on('setUser', name => {
-        document.cookie = `user=${name}`;
-        user = name;
-    })
     socket.on('message', msg => {
-        document.querySelector('#messages').innerHTML += msg;
+        document.querySelector('#messages').innerHTML += formatMessage(JSON.parse(msg));
+        updateScroll();
     });
 </script>
+<style>
+    * {
+        margin: 0;
+    }
+
+    #controls {
+        border: 2px solid black;
+        height: 4vh;
+    }
+    #controls input {
+        width: calc(100% - 200px);
+        height: 100%;
+        margin: 0;
+    }
+    #controls button {
+        width: 200px;
+        height: 100%;
+        margin: 0;
+        float:right;
+    }
+
+    #container {
+        height: 95vh;
+    }
+
+    #content {
+        display: flex;
+        height: 100%;
+    }
+
+    #messages {
+        height: 100%;
+        flex-grow: 8;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        /* justify-content: flex-end; */
+    }
+
+    #messages p:first-child {
+        margin-top: auto;
+    }
+
+    #users {
+        flex-grow: 2;
+    }
+
+</style>
 </head>
 <body>
     <div id="container">
@@ -47,10 +125,10 @@
 
             </div>
         </div>
-        <div id="controls">
-            <input type="text" id="data">
-            <button onclick="sendMSG()">Submit</button>
-        </div>
+        <form id="controls">
+            <input type="text" id="data" autocomplete="off">
+            <button>Submit</button>
+        </form>
     </div>
 </body>
 </html>
