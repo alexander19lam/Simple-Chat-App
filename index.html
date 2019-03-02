@@ -13,14 +13,15 @@
         element.scrollTop = element.scrollHeight;
     }
 
-    function formatMessage({date, user, message}){
+    function formatMessage({date, user : {username, color}, message}){
         // Function to compensate for missing 0 in minutes and hour
         function correctTime(time){
             return time > 9 ? time : `0${time}`;
         }
         const time = new Date(date);
-        const styledUser = `<span style='color:${user.color}'>${user.username}</span>`
-        return `<p>[${correctTime(time.getHours())}:${correctTime(time.getMinutes())}] ${styledUser}: ${message}</p>`
+        const styledUser = `<span style='color:${color}'>${username}</span>`;
+        const styledMessage = `[${correctTime(time.getHours())}:${correctTime(time.getMinutes())}] ${styledUser}: ${message}`
+        return username == currentUser.username ? `<p><b>${styledMessage}</b></p>` : `<p>${styledMessage}</p>`;
     }
 
     window.onload = () => {
@@ -34,7 +35,7 @@
                 socket.emit('nickname', field.value.split(' ')[1]);
             } 
             else {
-                field.value && socket.emit('message',JSON.stringify({user: currentUser, message: field.value}));
+                field.value && socket.emit('message',{user: currentUser, message: field.value});
             }
             field.value = '';
 
@@ -47,7 +48,7 @@
     })
 
     socket.on('history', history => {
-        JSON.parse(history).forEach(message => {
+        history.forEach(message => {
             document.querySelector('#messages').innerHTML += formatMessage(message);
         });
         updateScroll();
@@ -55,17 +56,18 @@
 
     socket.on('userList', userlist => {
         document.querySelector('#users').innerHTML = '';
-        JSON.parse(userlist).forEach(({username, color}) => {
+        userlist.forEach(({username, color}) => {
             document.querySelector('#users').innerHTML += `<p style='color:${color}'>${username}</p>`;
         });
     });
     
     socket.on('status', msg => {
         document.querySelector('#messages').innerHTML += `<p><i>${msg}</i></p>`;
+        updateScroll();
     });
 
     socket.on('message', msg => {
-        document.querySelector('#messages').innerHTML += formatMessage(JSON.parse(msg));
+        document.querySelector('#messages').innerHTML += formatMessage(msg);
         updateScroll();
     });
 </script>

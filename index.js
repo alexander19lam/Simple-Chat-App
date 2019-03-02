@@ -11,9 +11,8 @@ let activeUsers = [];
 
 let messageLog = [];
 
-function getTime(){
-    const now = new Date();
-    return `[${now.getHours()}:${now.getMinutes()}]`;
+function styleName({username, color}){
+    return `<span style='color:${color}'>${username}</span>`;
 }
 
 app.get('/', (req, res) => {
@@ -36,12 +35,12 @@ io.on('connection', (socket) => {
     
     // If there are users, Add it to the list
     if (username){
-        const activeUser = activeUsers.find(entry => entry.username == username);
+        // user = usedUsers.find(entry => entry.username == username);
+        const oldUser = usedUsers.find(entry => entry.username == username);
+        user = oldUser ? oldUser : user;
+        
         // Only add to active user if he is not there
-        if (activeUser){
-            user = activeUser;
-        }
-        else{
+        if (!activeUsers.includes(user)){
             activeUsers.push(user);
         }
         socket.emit('setUser', user);
@@ -49,7 +48,7 @@ io.on('connection', (socket) => {
     else{
         // Generating new name for the user
         user.username = availUsers[Math.floor(Math.random()*availUsers.length)];
-        usedUsers.push(user.username);
+        usedUsers.push(user);
         // Removing it from list of possible users
         availUsers.splice(availUsers.indexOf(user.username),1);
         activeUsers.push(user);
@@ -57,32 +56,35 @@ io.on('connection', (socket) => {
     }
 
     // Letting people know who connected
-    socket.broadcast.emit('status', `${user.username} has joined the chat`);
+    socket.broadcast.emit('status', `${styleName(user)} has joined the chat`);
 
     // Updating userlist
-    io.emit('userList', JSON.stringify(activeUsers));
+    io.emit('userList', activeUsers);
 
     // Sending the Chat History
-    socket.emit('history', JSON.stringify(messageLog));
+    socket.emit('history', messageLog);
 
+    // Letting User know who they are
+    socket.emit('status', `Welcome to the chat, you are ${styleName(user)}`);
 
     // Sending Messages
     socket.on('message', msg => {
-        const message = {date : new Date(), ...JSON.parse(msg)};
+        const message = {date : new Date(), ...msg};
         messageLog.push(message);
-        io.emit('message', JSON.stringify(message));
+        io.emit('message', message);
     });
 
     // Changing Nickname
     socket.on('nickname', name => {
-        if(activeUsers.find(user => user.username === name)){
+        if(activeUsers.find( user => user.username === name)){
             socket.emit('status', 'Name in use. Your name was not changed.')
         }else{
-            socket.emit('status', `Your name has been changed to ${name}`);
-            socket.broadcast.emit('status', `${user.username} has changed his name to ${name}`);
+            const updatedUser = {username: name, color: user.color};
+            socket.emit('status', `Your name has been changed to ${styleName(updatedUser)}`);
+            socket.broadcast.emit('status', `${styleName(user)} has changed their name to ${styleName(updatedUser)}`);
             user.username = name;
             socket.emit('setUser', user);
-            io.emit('userList', JSON.stringify(activeUsers));
+            io.emit('userList', activeUsers);
         }        
     });
 
@@ -92,14 +94,14 @@ io.on('connection', (socket) => {
                                 <span style='color:${user.color}'>${user.color}</span> -> <span style='color:#${color}'>#${color}</span>`);
         user.color = `#${color}`;
         socket.emit('setUser', user);
-        io.emit('userList', JSON.stringify(activeUsers));
+        io.emit('userList', activeUsers);
     });
     
     // On Disconnect
     socket.on('disconnect', () => {
-        socket.broadcast.emit('status', `${user.username} has left the chat`)
+        socket.broadcast.emit('status', `${styleName(user)} has left the chat`)
         activeUsers.splice(activeUsers.indexOf(user),1);
-        io.emit('userList', JSON.stringify(activeUsers));
+        io.emit('userList', activeUsers);
     });
 });
 
