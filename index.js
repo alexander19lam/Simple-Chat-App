@@ -1,4 +1,5 @@
-const app = require('express')();
+const express = require('express');
+const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
@@ -15,18 +16,16 @@ function styleName({username, color}){
     return `<span style='color:${color}'>${username}</span>`;
 }
 
+// Serving Public Folder for Scripts
+app.use(express.static('public'));
+
+// If default page is requested, server index.html
 app.get('/', (req, res) => {
-    // const userExist = req.headers.cookie.split(';').find(cookie => cookie.includes('boo='));
-    // if (userExist){
-        
-    // }
-    //const user = connection.split('=')[1].trim();
-    // console.log(user);
     res.sendFile(__dirname + '/index.html');
 });
 
+// On Socket IO connection
 io.on('connection', (socket) => {
-
     // Checking if user exist and assigning name
     const cookie = socket.client.request.headers.cookie;
     const userCookie =  cookie && cookie.split(';').find(cookie => cookie.includes('user='));
@@ -78,6 +77,8 @@ io.on('connection', (socket) => {
     socket.on('nickname', name => {
         if(activeUsers.find( user => user.username === name)){
             socket.emit('status', 'Name in use. Your name was not changed.')
+        }else if(name === ''){
+            socket.emit('status', 'Name cannot be empty. Your name was not changed.')
         }else{
             const updatedUser = {username: name, color: user.color};
             socket.emit('status', `Your name has been changed to ${styleName(updatedUser)}`);

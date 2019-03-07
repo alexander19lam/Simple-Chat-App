@@ -3,135 +3,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
-<script>
-    let currentUser, socket = io();
-    
-    function updateScroll() {
-        const element = document.querySelector('#messages');
-        element.scrollTop = element.scrollHeight;
-    }
-
-    function formatMessage({date, user : {username, color}, message}){
-        // Function to compensate for missing 0 in minutes and hour
-        function correctTime(time){
-            return time > 9 ? time : `0${time}`;
-        }
-        const time = new Date(date);
-        const styledUser = `<span style='color:${color}'>${username}</span>`;
-        const styledMessage = `[${correctTime(time.getHours())}:${correctTime(time.getMinutes())}] ${styledUser}: ${message}`
-        return username == currentUser.username ? `<p><b>${styledMessage}</b></p>` : `<p>${styledMessage}</p>`;
-    }
-
-    window.onload = () => {
-        document.querySelector('#controls').addEventListener('submit', event => {
-            event.preventDefault();
-            const field = document.querySelector('#data');
-            if (field.value.startsWith('/nickcolor')){
-                socket.emit('color', field.value.split(' ')[1]);
-            }
-            else if (field.value.startsWith('/nick')){
-                socket.emit('nickname', field.value.split(' ')[1]);
-            } 
-            else {
-                field.value && socket.emit('message',{user: currentUser, message: field.value});
-            }
-            field.value = '';
-
-        });
-    };
-
-    socket.on('setUser', user => {
-        document.cookie = `user=${user.username}`;
-        currentUser = user;
-    })
-
-    socket.on('history', history => {
-        history.forEach(message => {
-            document.querySelector('#messages').innerHTML += formatMessage(message);
-        });
-        updateScroll();
-    });
-
-    socket.on('userList', userlist => {
-        document.querySelector('#users').innerHTML = '';
-        userlist.forEach(({username, color}) => {
-            document.querySelector('#users').innerHTML += `<p style='color:${color}'>${username}</p>`;
-        });
-    });
-    
-    socket.on('status', msg => {
-        document.querySelector('#messages').innerHTML += `<p><i>${msg}</i></p>`;
-        updateScroll();
-    });
-
-    socket.on('message', msg => {
-        document.querySelector('#messages').innerHTML += formatMessage(msg);
-        updateScroll();
-    });
-</script>
-<style>
-    * {
-        margin: 0;
-    }
-
-    #controls {
-        border: 2px solid black;
-        height: 4vh;
-    }
-    #controls input {
-        width: calc(100% - 200px);
-        height: 100%;
-        margin: 0;
-    }
-    #controls button {
-        width: 200px;
-        height: 100%;
-        margin: 0;
-        float:right;
-    }
-
-    #container {
-        height: 95vh;
-    }
-
-    #content {
-        display: flex;
-        height: 100%;
-    }
-
-    #messages {
-        height: 100%;
-        flex-grow: 8;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        /* justify-content: flex-end; */
-    }
-
-    #messages p:first-child {
-        margin-top: auto;
-    }
-
-    #users {
-        flex-grow: 2;
-    }
-
-</style>
+    <title>Simple Chat App</title>
+    <script src="/script/socket.io.js"></script>
+    <script src="/script/main.js"></script>
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
     <div id="container">
         <div id='content'>
-            <div id="messages">
-
+            <div id="messageContainer">
+                <h2>You Are <span id="userID"></span></h2>
+                <div id="messages">
+    
+                </div>
             </div>
-            <div id="users">
-
+            <div id="userContainer">
+                <h2>Connected Users</h2>
+                <div id="users">
+    
+                </div>
             </div>
         </div>
         <form id="controls">
-            <input type="text" id="data" autocomplete="off">
+            <input type="text" id="data" autocomplete="off" autofocus>
             <button>Submit</button>
         </form>
     </div>
