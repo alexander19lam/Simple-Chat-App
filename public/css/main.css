@@ -1,75 +1,60 @@
+/* Defaulting to 0 margin for custom setting below */
 * {
     margin: 0;
 }
 
+/* Format text on top of each dialog*/
 h2{
     color: white;
     flex-grow: 1;
 }
 
+/* Main Container Housing the Elements */
 #container {
     margin: 20px;
     padding: 10px;
     height: 90vh;
-    /* display: flex; */
+    min-width: 300px;
     flex-direction: column;
     border: 2px solid black;
     border-radius: 10px;
     background-color: darkgray;
 }
 
+/* Style for the control elements */
 #controls {
     margin: 0px 20px 10px 20px;
     border: 2px solid black;
-    /* flex-grow: 1; */
-    /* border-radius: 10px; */
-    /* min-height: 35px; */
     height: 5%;
     display: flex;
 }
 #controls input {
-    /* width: calc(100% - 200px); */
     background-color: lightcyan;
     padding-left: 5px;
-    /* border-radius: 10px 0px 0px 10px; */
     flex-grow: 8;
-    /* height: 100%; */
 }
 #controls button {
     flex-grow: 2;
-    /* border-radius: 0px 10px 10px 0px; */
-    /* flex-basis: 200px; */
-    /* width: 200px; */
-    /* height: 100%; */
-    /* float:right; */
 }
 
+/* Container alignment for active users and messages */
 #content {
     height: 90%;
     display: flex;
     padding: 10px;
 }
 
+/* Formating for the messages*/
 #messageContainer {
-    /* height: 100%; */
     flex-grow: 8;
     display: flex;
     flex-direction: column;
     padding: 10px;
-    max-width: 1300px;
-    /* max-width: 1400px; */
-    /* justify-content: flex-end; */
+    max-width: 75vw;
 }
-
-/* #messageContainer h3{
-    color: white;
-    flex-grow: 1;
-} */
 
 #messages {
     height: 100%;
-    /* flex-grow: 99; */
-
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -79,23 +64,23 @@ h2{
     background-color: lightcyan;
 }
 
-#messages p:first-child {
-    margin-top: auto;
-}
-
 #messages p {
     margin: 2px 0px;
 }
 
+/* Allow for messages to be bottom aligned */
+#messages p:first-child {
+    margin-top: auto;
+}
 
+/* Formating for active users column */
 #userContainer {
     flex-grow: 2;
     display: flex;
     flex-direction: column;
     padding: 10px;
-    /* min-width: 200px; */
+    max-width: 19vw;
 }
-
 
 #users {
     flex-grow: 99;
@@ -103,7 +88,9 @@ h2{
     padding: 10px;
     border-radius: 20px;
     background-color: lightcyan;
+    overflow: auto;
 }
+
 #users p {
     margin: 5px 0px;
 }
